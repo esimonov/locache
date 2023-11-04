@@ -47,7 +47,7 @@ func TestLoadLocation_SafeForConcurrentAccess(t *testing.T) {
 	wg.Wait()
 }
 
-func TestLoadLocation_ReturnArgumentsAreEquivalentToNativeImplementation_Property(t *testing.T) {
+func TestLoadLocation_ReturnArgumentsAreEquivalentToStandardLibraryImplementation_Property(t *testing.T) {
 	f := func(n int64) bool {
 		locName := "unknown" + strconv.Itoa(int(n))
 
@@ -79,43 +79,36 @@ func loadIANATzNamesFromZip(zipfile string) []string {
 	if err != nil {
 		panic(err)
 	}
-	defer closefd(fd)
+	defer syscall.Close(int(fd))
 
-	const (
-		zecheader = 0x06054b50
-		zcheader  = 0x02014b50
-		ztailsize = 22
-	)
+	const ztailsize = 22
 
 	buf := make([]byte, ztailsize)
 
 	preadn(fd, buf, -ztailsize)
 
-	if get4(buf) != zecheader {
-		panic("corrupt zip file " + zipfile)
-	}
+	getn(4, buf)
 
-	n := get2(buf[10:])
-	size := get4(buf[12:])
-	off := get4(buf[16:])
+	n := getn(2, buf[10:])
+	size := getn(4, buf[12:])
+	off := getn(4, buf[16:])
 
 	buf = make([]byte, size)
 
 	preadn(fd, buf, off)
 
-	ianaNames := make([]string, 0)
+	ianaNames := make([]string, n)
 
 	for i := 0; i < n; i++ {
-		if get4(buf) != zcheader {
-			break
-		}
+		getn(4, buf)
 
-		namelen := get2(buf[28:])
-		xlen := get2(buf[30:])
-		fclen := get2(buf[32:])
-		zname := buf[46 : 46+namelen]
+		namelen := getn(2, buf[28:])
+		xlen := getn(2, buf[30:])
+		fclen := getn(2, buf[32:])
+
+		ianaNames[i] = string(buf[46 : 46+namelen])
+
 		buf = buf[46+namelen+xlen+fclen:]
-		ianaNames = append(ianaNames, string(zname))
 	}
 	return ianaNames
 }
@@ -128,10 +121,6 @@ func open(name string) (uintptr, error) {
 	return uintptr(fd), nil
 }
 
-func closefd(fd uintptr) {
-	syscall.Close(int(fd))
-}
-
 func preadn(fd uintptr, buf []byte, off int) {
 	whence := 0
 	if off < 0 {
@@ -142,16 +131,13 @@ func preadn(fd uintptr, buf []byte, off int) {
 	syscall.Read(int(fd), buf)
 }
 
-func get4(b []byte) int {
-	if len(b) < 4 {
+func getn(n int, b []byte) (result int) {
+	if len(b) < n {
 		return 0
 	}
-	return int(b[0]) | int(b[1])<<8 | int(b[2])<<16 | int(b[3])<<24
-}
 
-func get2(b []byte) int {
-	if len(b) < 2 {
-		return 0
+	for i := 0; i < n; i++ {
+		result |= int(b[i]) << (i * 8)
 	}
-	return int(b[0]) | int(b[1])<<8
+	return result
 }

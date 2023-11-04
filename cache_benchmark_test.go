@@ -7,23 +7,21 @@ import (
 )
 
 func Benchmark_LoadLocation(b *testing.B) {
-	b.ResetTimer()
-
-	for i, tc := range []string{"Native", "Locache"} {
-		for _, numLookups := range []int{10, 100, 1000} {
-			b.Run(fmt.Sprintf("%s_%dRepeatedLookups", tc, numLookups), func(b *testing.B) {
-				for j := 0; j < b.N; j++ {
+	for _, tc := range [2]string{"time", "locache"} {
+		for _, numLookups := range [3]int{10, 100, 1000} {
+			b.Run(fmt.Sprintf("%s_%d_RepeatedLookups", tc, numLookups), func(b *testing.B) {
+				for i := 0; i < b.N; i++ {
 					b.StopTimer()
 
 					sut := time.LoadLocation
 
-					if i == 1 {
+					if tc == "locache" {
 						sut = newCache().LoadLocation
 					}
 
 					b.StartTimer()
 
-					for k := 0; k < numLookups; k++ {
+					for j := 0; j < numLookups; j++ {
 						if _, err := sut("Europe/Kyiv"); err != nil {
 							b.Fatal(err)
 						}
