@@ -6,7 +6,7 @@ A very simple in-memory cache for time.Locations, written in pure Go.
 
 It is [known](https://pkg.go.dev/time#LoadLocation) that `time.LoadLocation` is reading the locations information from disk. Furthermore, previously retrieved locations are not being cached: the same location is looked up as many times as `time.LoadLocation` is called. If your application needs to open a bunch of locations very limited number of times, this behaviour would be desirable. On the other hand, when it is constantly looking up the same locations, this may seem wasteful. `locache` allows to perform disk lookups only once per location, and then reuse the results.
 
-The extent of this mitigation grows linearly with the number of repeated lookups:
+The mitigation becomes more noticeable as the number of repeated lookups grows:
 
 ```
 goos: darwin
