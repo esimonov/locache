@@ -1,0 +1,29 @@
+name: Go
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
+
+      - name: Test
+        run: |
+          go install gotest.tools/gotestsum@latest
+          gotestsum --junitfile test-reports/junit.xml -- -timeout 1m -count=1 -coverprofile=cp.out -race -v ./...
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: test-reports/junit.xml
+        if: always()

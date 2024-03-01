@@ -30,17 +30,17 @@ func init() {
 func TestLoadLocation_SafeForConcurrentAccess(t *testing.T) {
 	wg := new(sync.WaitGroup)
 
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		for _, locName := range testLocNames {
 			wg.Add(1)
 
-			go func(name string) {
+			go func() {
 				defer wg.Done()
 
-				if _, err := locache.LoadLocation(name); err != nil {
+				if _, err := locache.LoadLocation(locName); err != nil {
 					panic(err)
 				}
-			}(locName)
+			}()
 		}
 	}
 
@@ -99,7 +99,7 @@ func loadIANATzNamesFromZip(zipfile string) []string {
 
 	ianaNames := make([]string, n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		getn(4, buf)
 
 		namelen := getn(2, buf[28:])
@@ -136,7 +136,7 @@ func getn(n int, b []byte) (result int) {
 		return 0
 	}
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		result |= int(b[i]) << (i * 8)
 	}
 	return result
