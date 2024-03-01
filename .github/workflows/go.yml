@@ -2,30 +2,29 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.22'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.22"
 
-    - name: Test
-      run: |
+      - name: Test
+        run: |
           go install gotest.tools/gotestsum@latest
           gotestsum --junitfile test-reports/junit.xml -- -timeout 1m -count=1 -coverprofile=cp.out -race -v ./...
-    
-    - name: Test Summary
-      uses: test-summary/action@v2
-      with:
-        paths: |
-          test-one/**/TEST-*.xml
-          test-two/results/results.tap
-      if: always()
+
+      - name: Test Summary
+        uses: test-summary/action@v2
+        with:
+          paths: |
+            test-reports/*.xml
+        if: always()
